@@ -61,7 +61,9 @@
     let airstrikes = L.geoJSON(null, { pointToLayer: (f, latlng) => L.circleMarker(latlng, { color: "red", radius: 4 }) });
 
     // Load all GeoJSON files
-    fetch("gaza_boundaries.geojson").then(res => res.json()).then(data => neighborhoods.addData(data));
+    fetch("https://raw.githubusercontent.com/sophiahayes/spatfinal/main/gaza_boundaries.geojson")
+  .then(res => res.json())
+  .then(data => neighborhoods.addData(data));
     fetch("hospital_buffers.geojson").then(res => res.json()).then(data => hospitalBuffers.addData(data));
     fetch("gaza_cities.geojson").then(res => res.json()).then(data => majorCities.addData(data));
 

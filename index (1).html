@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gaza Hospitals Affected by Airstrikes, 2023-2025</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { margin: 0; }
+        #map { height: 100vh; }
+        .buttons {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+        }
+        .buttons button {
+            margin: 0 2px;
+            padding: 6px 12px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="buttons">
+    <button onclick="showFunctional()">🟢 Functional</button>
+    <button onclick="showAffected()">🔴 Affected</button>
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    const map = L.map('map').setView([31.5, 34.47], 11);
+
+    // Base layer
+    L.tileLayer(L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
+    })).addTo(map);
+
+    // Shared layers
+    let neighborhoods = L.geoJSON(null, { style: { color: "#555", weight: 1 } });
+    let hospitalBuffers = L.geoJSON(null, { style: { color: "#255791", dashArray: '4', fillOpacity: 0.5 } });
+    let majorCities = L.geoJSON(null, {
+        pointToLayer: (f, latlng) => L.circleMarker(latlng, { radius: 5, fillColor: "#333", fillOpacity: 1, color: "#fff" })
+    });
+
+    // Functional view layers
+    let functionalHospitals = L.geoJSON(null, { pointToLayer: (f, latlng) => L.circleMarker(latlng, { color: "#255791", fillOpacity: 0.7 }) });
+    let zonalPopulation = L.geoJSON(null, { style: { color: "green", fillOpacity: 0.3 } });
+
+    // Affected view layers
+    let affectedHospitals = L.geoJSON(null, {
+    style: {
+        color: "#a62c1a",
+        weight: 2,
+        fillOpacity: 0.3
+    }
+});
+    let airstrikes = L.geoJSON(null, { pointToLayer: (f, latlng) => L.circleMarker(latlng, { color: "red", radius: 4 }) });
+
+    // Load all GeoJSON files
+    fetch("gaza_boundaries.geojson").then(res => res.json()).then(data => neighborhoods.addData(data));
+    fetch("hospital_buffers.geojson").then(res => res.json()).then(data => hospitalBuffers.addData(data));
+    fetch("gaza_cities.geojson").then(res => res.json()).then(data => majorCities.addData(data));
+
+    fetch("gaza_hospitals.geojson").then(res => res.json()).then(data => functionalHospitals.addData(data));
+    fetch("gaza_zonalpop.geojson").then(res => res.json()).then(data => zonalPopulation.addData(data));
+
+    fetch("impacted_hospitals.geojson").then(res => res.json()).then(data => affectedHospitals.addData(data));
+    fetch("gaza_airstrikes.geojson").then(res => res.json()).then(data => airstrikes.addData(data));
+
+    // Group layer toggling
+    function clearLayers() {
+        [functionalHospitals, zonalPopulation, affectedHospitals, airstrikes].forEach(layer => {
+            if (map.hasLayer(layer)) map.removeLayer(layer);
+        });
+    }
+
+    function showFunctional() {
+        clearLayers();
+        map.addLayer(functionalHospitals);
+        map.addLayer(zonalPopulation);
+    }
+
+    function showAffected() {
+        clearLayers();
+        map.addLayer(affectedHospitals);
+        map.addLayer(airstrikes);
+    }
+
+    // Add shared layers to map
+    [neighborhoods, hospitalBuffers, majorCities].forEach(layer => layer.addTo(map));
+
+    // Default view
+    showFunctional();
+</script>
+
+</body>
+</html>
